@@ -6,21 +6,8 @@ import (
 
 type MultiOption func(b *MultiBucketBackend) error
 
-func MultiWithMetaFs(fs afero.Fs) MultiOption {
-	return func(b *MultiBucketBackend) error {
-		if err := ensureNoOsFs("MultiWithMetaFs", fs); err != nil {
-			return err
-		}
-		b.configOnly.metaFs = fs
-		return nil
-	}
-}
+func MultiWithMetaFs(fs afero.Fs) MultiOption { _ = "STUB: not implemented"; return *new(MultiOption) }
 
-func MultiFsFlags(flags FsFlags) MultiOption {
-	return func(b *MultiBucketBackend) error {
-		b.flags = flags
-		return nil
-	}
-}
+func MultiFsFlags(flags FsFlags) MultiOption { _ = "STUB: not implemented"; return *new(MultiOption) }
 
 type SingleOption func(b *SingleBucketBackend) error

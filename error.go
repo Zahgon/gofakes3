@@ -2,8 +2,6 @@ package gofakes3
 
 import (
 	"encoding/xml"
-	"fmt"
-	"net/http"
 	"time"
 )
 
@@ -115,25 +113,8 @@ type errorResponse interface {
 }
 
 func ensureErrorResponse(err error, requestID string) Error {
-	switch err := err.(type) {
-	case errorResponse:
-		err.enrich(requestID)
-		return err
-
-	case ErrorCode:
-		return &ErrorResponse{
-			Code:      err,
-			RequestID: requestID,
-			Message:   string(err),
-		}
-
-	default:
-		return &ErrorResponse{
-			Code:      ErrInternal,
-			Message:   "Internal Error",
-			RequestID: requestID,
-		}
-	}
+	_ = "STUB: not implemented"
+	return *new(Error)
 }
 
 type Error interface {
@@ -173,22 +154,17 @@ type ErrorResponse struct {
 	HostID    string `xml:"HostId,omitempty"`
 }
 
-func (e *ErrorResponse) ErrorCode() ErrorCode { return e.Code }
+func (e *ErrorResponse) ErrorCode() ErrorCode { _ = "STUB: not implemented"; return *new(ErrorCode) }
 
-func (e *ErrorResponse) Error() string {
-	return fmt.Sprintf("%s: %s", e.Code, e.Message)
-}
+func (e *ErrorResponse) Error() string { _ = "STUB: not implemented"; return "" }
 
-func (r *ErrorResponse) enrich(requestID string) {
-	r.RequestID = requestID
-}
+func (r *ErrorResponse) enrich(requestID string) { _ = "STUB: not implemented"; return }
 
-func ErrorMessage(code ErrorCode, message string) error {
-	return &ErrorResponse{Code: code, Message: message}
-}
+func ErrorMessage(code ErrorCode, message string) error { _ = "STUB: not implemented"; return nil }
 
 func ErrorMessagef(code ErrorCode, message string, args ...interface{}) error {
-	return &ErrorResponse{Code: code, Message: fmt.Sprintf(message, args...)}
+	_ = "STUB: not implemented"
+	return nil
 }
 
 type ErrorInvalidArgumentResponse struct {
@@ -198,108 +174,29 @@ type ErrorInvalidArgumentResponse struct {
 	ArgumentValue string `xml:"ArgumentValue"`
 }
 
-func ErrorInvalidArgument(name, value, message string) error {
-	return &ErrorInvalidArgumentResponse{
-		ErrorResponse: ErrorResponse{Code: ErrInvalidArgument, Message: message},
-		ArgumentName:  name, ArgumentValue: value}
-}
+func ErrorInvalidArgument(name, value, message string) error { _ = "STUB: not implemented"; return nil }
 
 // ErrorCode represents an S3 error code, documented here:
 // https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
 type ErrorCode string
 
-func (e ErrorCode) ErrorCode() ErrorCode { return e }
-func (e ErrorCode) Error() string        { return string(e) }
+func (e ErrorCode) ErrorCode() ErrorCode { _ = "STUB: not implemented"; return *new(ErrorCode) }
+func (e ErrorCode) Error() string        { _ = "STUB: not implemented"; return "" }
 
 // InternalErrorCode represents an GoFakeS3 error code. It maps to ErrInternal
 // when constructing a response.
 type InternalErrorCode string
 
-func (e InternalErrorCode) ErrorCode() ErrorCode { return ErrInternal }
-func (e InternalErrorCode) Error() string        { return string(ErrInternal) }
+func (e InternalErrorCode) ErrorCode() ErrorCode { _ = "STUB: not implemented"; return *new(ErrorCode) }
+func (e InternalErrorCode) Error() string        { _ = "STUB: not implemented"; return "" }
 
 // Message tries to return the same string as S3 would return for the error
 // response, when it is known, or nothing when it is not. If you see the status
 // text for a code we don't have listed in here in the wild, please let us
 // know!
-func (e ErrorCode) Message() string {
-	switch e {
-	case ErrInvalidBucketName:
-		return `Bucket name must match the regex "^[a-zA-Z0-9.\-_]{1,255}$"`
-	case ErrNoSuchBucket:
-		return "The specified bucket does not exist"
-	case ErrRequestTimeTooSkewed:
-		return "The difference between the request time and the current time is too large"
-	case ErrMalformedXML:
-		return "The XML you provided was not well-formed or did not validate against our published schema"
-	case ErrPreconditionFailed:
-		return "At least one of the preconditions you specified did not hold"
-	case ErrConditionalRequestConflict:
-		return "A conflicting conditional operation is currently in progress against this resource"
-	default:
-		return ""
-	}
-}
+func (e ErrorCode) Message() string { _ = "STUB: not implemented"; return "" }
 
-func (e ErrorCode) Status() int {
-	switch e {
-	case ErrBucketAlreadyExists,
-		ErrBucketNotEmpty:
-		return http.StatusConflict
-
-	case ErrConditionalRequestConflict:
-		return http.StatusConflict
-
-	case ErrPreconditionFailed:
-		return http.StatusPreconditionFailed
-
-	case ErrBadDigest,
-		ErrIllegalVersioningConfiguration,
-		ErrIncompleteBody,
-		ErrIncorrectNumberOfFilesInPostRequest,
-		ErrInlineDataTooLarge,
-		ErrInvalidArgument,
-		ErrInvalidBucketName,
-		ErrInvalidDigest,
-		ErrInvalidPart,
-		ErrInvalidPartOrder,
-		ErrInvalidToken,
-		ErrInvalidURI,
-		ErrKeyTooLong,
-		ErrMetadataTooLarge,
-		ErrMethodNotAllowed,
-		ErrMalformedPOSTRequest,
-		ErrMalformedXML,
-		ErrTooManyBuckets:
-		return http.StatusBadRequest
-
-	case ErrRequestTimeTooSkewed:
-		return http.StatusForbidden
-
-	case ErrInvalidRange:
-		return http.StatusRequestedRangeNotSatisfiable
-
-	case ErrNoSuchBucket,
-		ErrNoSuchKey,
-		ErrNoSuchUpload,
-		ErrNoSuchVersion:
-		return http.StatusNotFound
-
-	case ErrNotImplemented:
-		return http.StatusNotImplemented
-
-	case ErrNotModified:
-		return http.StatusNotModified
-
-	case ErrMissingContentLength:
-		return http.StatusLengthRequired
-
-	case ErrInternal:
-		return http.StatusInternalServerError
-	}
-
-	return http.StatusInternalServerError
-}
+func (e ErrorCode) Status() int { _ = "STUB: not implemented"; return 0 }
 
 // HasErrorCode asserts that the error has a specific error code:
 //
@@ -308,22 +205,11 @@ func (e ErrorCode) Status() int {
 //	}
 //
 // If err is nil and code is ErrNone, HasErrorCode returns true.
-func HasErrorCode(err error, code ErrorCode) bool {
-	if err == nil && code == "" {
-		return true
-	}
-	s3err, ok := err.(interface{ ErrorCode() ErrorCode })
-	if !ok {
-		return false
-	}
-	return s3err.ErrorCode() == code
-}
+func HasErrorCode(err error, code ErrorCode) bool { _ = "STUB: not implemented"; return false }
 
 // IsAlreadyExists asserts that the error is a kind that indicates the resource
 // already exists, similar to os.IsExist.
-func IsAlreadyExists(err error) bool {
-	return HasErrorCode(err, ErrBucketAlreadyExists)
-}
+func IsAlreadyExists(err error) bool { _ = "STUB: not implemented"; return false }
 
 type resourceErrorResponse struct {
 	ErrorResponse
@@ -332,15 +218,10 @@ type resourceErrorResponse struct {
 
 var _ errorResponse = &resourceErrorResponse{}
 
-func ResourceError(code ErrorCode, resource string) error {
-	return &resourceErrorResponse{
-		ErrorResponse{Code: code, Message: code.Message()},
-		resource,
-	}
-}
+func ResourceError(code ErrorCode, resource string) error { _ = "STUB: not implemented"; return nil }
 
-func BucketNotFound(bucket string) error { return ResourceError(ErrNoSuchBucket, bucket) }
-func KeyNotFound(key string) error       { return ResourceError(ErrNoSuchKey, key) }
+func BucketNotFound(bucket string) error { _ = "STUB: not implemented"; return nil }
+func KeyNotFound(key string) error       { _ = "STUB: not implemented"; return nil }
 
 type requestTimeTooSkewedResponse struct {
 	ErrorResponse
@@ -351,11 +232,8 @@ type requestTimeTooSkewedResponse struct {
 var _ errorResponse = &requestTimeTooSkewedResponse{}
 
 func requestTimeTooSkewed(at time.Time, max time.Duration) error {
-	code := ErrRequestTimeTooSkewed
-	return &requestTimeTooSkewedResponse{
-		ErrorResponse{Code: code, Message: code.Message()},
-		at, durationAsMilliseconds(max),
-	}
+	_ = "STUB: not implemented"
+	return nil
 }
 
 // durationAsMilliseconds tricks xml.Marshal into serialising a time.Duration as
@@ -363,6 +241,6 @@ func requestTimeTooSkewed(at time.Time, max time.Duration) error {
 type durationAsMilliseconds time.Duration
 
 func (m durationAsMilliseconds) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	var s = fmt.Sprintf("%d", time.Duration(m)/time.Millisecond)
-	return e.EncodeElement(s, start)
+	_ = "STUB: not implemented"
+	return nil
 }

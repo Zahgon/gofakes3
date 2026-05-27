@@ -1,9 +1,7 @@
 package gofakes3
 
 import (
-	"net"
 	"regexp"
-	"strings"
 )
 
 // This pattern can be used to match both the entire bucket name (including period-
@@ -21,34 +19,13 @@ var bucketNamePattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9\.-]+)[a-z0-9]$`)
 //
 // The DNS RFC confirms that the valid range of characters in an LDH label is 'a-z0-9-':
 // https://tools.ietf.org/html/rfc5890#section-2.3.1
-func ValidateBucketName(name string) error {
-	if len(name) < 3 || len(name) > 63 {
-		return ErrorMessage(ErrInvalidBucketName, "bucket name must be >= 3 characters and <= 63")
-	}
-	if !bucketNamePattern.MatchString(name) {
-		return ErrorMessage(ErrInvalidBucketName, "bucket must start and end with 'a-z, 0-9', and contain only 'a-z, 0-9, -' in between")
-	}
+func ValidateBucketName(name string) error { _ = "STUB: not implemented"; return nil }
 
-	if net.ParseIP(name) != nil {
-		return ErrorMessage(ErrInvalidBucketName, "bucket names must not be formatted as an IP address")
-	}
-
-	// Bucket names must be a series of one or more labels. Adjacent labels are
-	// separated by a single period (.). Bucket names can contain lowercase
-	// letters, numbers, and hyphens. Each label must start and end with a
-	// lowercase letter or a number.
-	labels := strings.Split(name, ".")
-	for _, label := range labels {
-		if !bucketNamePattern.MatchString(label) {
-			return ErrorMessage(ErrInvalidBucketName, "label must start and end with 'a-z, 0-9', and contain only 'a-z, 0-9, -' in between")
-		}
-	}
-
-	return nil
-}
+// Bucket names must be a series of one or more labels. Adjacent labels are
+// separated by a single period (.). Bucket names can contain lowercase
+// letters, numbers, and hyphens. Each label must start and end with a
+// lowercase letter or a number.
 
 var etagPattern = regexp.MustCompile(`^"[a-z0-9]+"$`)
 
-func validETag(v string) bool {
-	return etagPattern.MatchString(v)
-}
+func validETag(v string) bool { _ = "STUB: not implemented"; return false }

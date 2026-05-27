@@ -13,54 +13,29 @@ type Iterator struct {
 	seekWasOK bool
 }
 
-func New(inner skiplist.Iterator) *Iterator {
-	return &Iterator{inner: inner}
-}
+func New(inner skiplist.Iterator) *Iterator { _ = "STUB: not implemented"; return nil }
 
 // Next returns true if the iterator contains subsequent elements
 // and advances its state to the next element if that is possible.
-func (iter *Iterator) Next() (ok bool) {
-	if iter.didSeek {
-		iter.didSeek = false
-		return iter.seekWasOK
-	} else {
-		return iter.inner.Next()
-	}
-}
+func (iter *Iterator) Next() (ok bool) { _ = "STUB: not implemented"; return false }
 
 // Previous returns true if the iterator contains previous elements
 // and rewinds its state to the previous element if that is possible.
-func (iter *Iterator) Previous() (ok bool) {
-	if iter.didSeek {
-		panic("not implemented")
-	}
-	return iter.inner.Previous()
-}
+func (iter *Iterator) Previous() (ok bool) { _ = "STUB: not implemented"; return false }
 
 // Key returns the current key.
-func (iter *Iterator) Key() interface{} {
-	return iter.inner.Key()
-}
+func (iter *Iterator) Key() interface{} { _ = "STUB: not implemented"; return nil }
 
 // Value returns the current value.
-func (iter *Iterator) Value() interface{} {
-	return iter.inner.Value()
-}
+func (iter *Iterator) Value() interface{} { _ = "STUB: not implemented"; return nil }
 
 // Seek reduces iterative seek costs for searching forward into the Skip List
 // by remarking the range of keys over which it has scanned before.  If the
 // requested key occurs prior to the point, the Skip List will start searching
 // as a safeguard.  It returns true if the key is within the known range of
 // the list.
-func (iter *Iterator) Seek(key interface{}) (ok bool) {
-	iter.didSeek = true
-	ok = iter.inner.Seek(key)
-	iter.seekWasOK = ok
-	return ok
-}
+func (iter *Iterator) Seek(key interface{}) (ok bool) { _ = "STUB: not implemented"; return false }
 
 // Close this iterator to reap resources associated with it.  While not
 // strictly required, it will provide extra hints for the garbage collector.
-func (iter *Iterator) Close() {
-	iter.inner.Close()
-}
+func (iter *Iterator) Close() { _ = "STUB: not implemented"; return }

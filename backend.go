@@ -1,11 +1,7 @@
 package gofakes3
 
 import (
-	"encoding/hex"
-	"errors"
-
 	"io"
-	"time"
 )
 
 const (
@@ -44,23 +40,11 @@ type ObjectList struct {
 	prefixes map[string]bool
 }
 
-func NewObjectList() *ObjectList {
-	return &ObjectList{}
-}
+func NewObjectList() *ObjectList { _ = "STUB: not implemented"; return nil }
 
-func (b *ObjectList) Add(item *Content) {
-	b.Contents = append(b.Contents, item)
-}
+func (b *ObjectList) Add(item *Content) { _ = "STUB: not implemented"; return }
 
-func (b *ObjectList) AddPrefix(prefix string) {
-	if b.prefixes == nil {
-		b.prefixes = map[string]bool{}
-	} else if b.prefixes[prefix] {
-		return
-	}
-	b.prefixes[prefix] = true
-	b.CommonPrefixes = append(b.CommonPrefixes, CommonPrefix{Prefix: prefix})
-}
+func (b *ObjectList) AddPrefix(prefix string) { _ = "STUB: not implemented"; return }
 
 type ObjectDeleteResult struct {
 	// Specifies whether the versioned object that was permanently deleted was
@@ -116,9 +100,7 @@ type ListBucketPage struct {
 	MaxKeys int64
 }
 
-func (p ListBucketPage) IsEmpty() bool {
-	return p == ListBucketPage{}
-}
+func (p ListBucketPage) IsEmpty() bool { _ = "STUB: not implemented"; return false }
 
 type PutObjectResult struct {
 	// If versioning is enabled on the bucket, this should be set to the
@@ -157,38 +139,19 @@ type ConditionalObjectInfo struct {
 type ObjectInfo = ConditionalObjectInfo
 
 // FormatETag formats a hash as an S3 ETag with quotes
-func FormatETag(hash []byte) string {
-	return `"` + hex.EncodeToString(hash) + `"`
-}
+func FormatETag(hash []byte) string { _ = "STUB: not implemented"; return "" }
 
 // CheckPutConditions validates conditional headers for PutObject operations.
 // This is a shared implementation that all backends can use.
 func CheckPutConditions(conditions *PutConditions, objectInfo *ConditionalObjectInfo) error {
+	_ = "STUB: not implemented"
 	// Check If-None-Match: object should not exist
-	if conditions.IfNoneMatch != nil {
-		if *conditions.IfNoneMatch == "*" && objectInfo.Exists {
-			return ErrorMessage(ErrPreconditionFailed, "The object already exists")
-		}
-	}
-
-	// Check If-Match: if specified, object must exist and ETag must match
-	if conditions.IfMatch != nil {
-		if !objectInfo.Exists {
-			return ErrorMessage(ErrPreconditionFailed, "The object does not exist")
-		}
-		expectedETag := *conditions.IfMatch
-		// Remove quotes if present for comparison
-		if len(expectedETag) >= 2 && expectedETag[0] == '"' && expectedETag[len(expectedETag)-1] == '"' {
-			expectedETag = expectedETag[1 : len(expectedETag)-1]
-		}
-		actualETag := hex.EncodeToString(objectInfo.Hash)
-		if expectedETag != actualETag {
-			return ErrorMessage(ErrPreconditionFailed, "The ETag does not match")
-		}
-	}
-
 	return nil
 }
+
+// Check If-Match: if specified, object must exist and ETag must match
+
+// Remove quotes if present for comparison
 
 // Backend provides a set of operations to be implemented in order to support
 // gofakes3.
@@ -405,41 +368,17 @@ type MultipartBackend interface {
 // a backend that already supports GetObject and PutObject. This isn't very
 // efficient so only use this if performance isn't important.
 func CopyObject(db Backend, srcBucket, srcKey, dstBucket, dstKey string, meta map[string]string) (result CopyObjectResult, err error) {
-	c, err := db.GetObject(srcBucket, srcKey, nil)
-	if err != nil {
-		return
-	}
-	defer c.Contents.Close()
-
-	_, err = db.PutObject(dstBucket, dstKey, meta, c.Contents, c.Size, nil)
-	if err != nil {
-		return
-	}
-
-	return CopyObjectResult{
-		ETag:         `"` + hex.EncodeToString(c.Hash) + `"`,
-		LastModified: NewContentTime(time.Now()),
-	}, nil
+	_ = "STUB: not implemented"
+	return *new(CopyObjectResult), nil
 }
 
 func MergeMetadata(db Backend, bucketName string, objectName string, meta map[string]string) error {
+	_ = "STUB: not implemented"
 	// get potential existing object to potentially carry metadata over
-	existingObj, err := db.GetObject(bucketName, objectName, nil)
-	if err != nil {
-		var nsk *ErrorResponse
-		if errors.As(err, &nsk) && nsk.Code != "NoSuchKey" {
-			return err
-		}
-	}
-	// carry over metadata if it exists
-	if existingObj != nil {
-		for k, v := range existingObj.Metadata {
-			// new metadata overwrites old but keep the rest
-			// TODO: check how metadata can be deleted?!
-			if _, ok := meta[k]; !ok {
-				meta[k] = v
-			}
-		}
-	}
 	return nil
 }
+
+// carry over metadata if it exists
+
+// new metadata overwrites old but keep the rest
+// TODO: check how metadata can be deleted?!

@@ -63,22 +63,19 @@ type Logger interface {
 //
 // All levels are reported by default. If you pass levels to this function,
 // it will act as a level whitelist.
-func GlobalLog(levels ...LogLevel) Logger {
-	return newStdLog(log.Println, levels...)
-}
+func GlobalLog(levels ...LogLevel) Logger { _ = "STUB: not implemented"; return *new(Logger) }
 
 // StdLog creates a Logger that uses the stdlib's log.Logger type.
 //
 // All levels are reported by default. If you pass levels to this function,
 // it will act as a level whitelist.
 func StdLog(log *log.Logger, levels ...LogLevel) Logger {
-	return newStdLog(log.Println, levels...)
+	_ = "STUB: not implemented"
+	return *new(Logger)
 }
 
 // DiscardLog creates a Logger that discards all messages.
-func DiscardLog() Logger {
-	return &discardLog{}
-}
+func DiscardLog() Logger { _ = "STUB: not implemented"; return *new(Logger) }
 
 type stdLog struct {
 	log    func(v ...interface{})
@@ -86,39 +83,20 @@ type stdLog struct {
 }
 
 func newStdLog(log func(v ...interface{}), levels ...LogLevel) Logger {
-	sl := &stdLog{log: log}
-	if len(levels) > 0 {
-		sl.levels = map[LogLevel]bool{}
-		for _, lv := range levels {
-			sl.levels[lv] = true
-		}
-	}
-	return sl
+	_ = "STUB: not implemented"
+	return *new(Logger)
 }
 
-func (s *stdLog) Print(level LogLevel, v ...interface{}) {
-	if s.levels == nil || s.levels[level] {
-		v = append(v, nil)
-		copy(v[1:], v)
-		v[0] = level
-		s.log(v...)
-	}
-}
+func (s *stdLog) Print(level LogLevel, v ...interface{}) { _ = "STUB: not implemented"; return }
 
 type discardLog struct{}
 
-func (d discardLog) Print(level LogLevel, v ...interface{}) {}
+func (d discardLog) Print(level LogLevel, v ...interface{}) { _ = "STUB: not implemented"; return }
 
-func MultiLog(loggers ...Logger) Logger {
-	return &multiLog{loggers}
-}
+func MultiLog(loggers ...Logger) Logger { _ = "STUB: not implemented"; return *new(Logger) }
 
 type multiLog struct {
 	loggers []Logger
 }
 
-func (m multiLog) Print(level LogLevel, v ...interface{}) {
-	for _, l := range m.loggers {
-		l.Print(level, v...)
-	}
-}
+func (m multiLog) Print(level LogLevel, v ...interface{}) { _ = "STUB: not implemented"; return }

@@ -8,10 +8,6 @@ type Config struct {
 	Verbose            bool
 }
 
-func (c Config) BucketStandard() string {
-	return c.S3TestBucketPrefix
-}
+func (c Config) BucketStandard() string { _ = "STUB: not implemented"; return "" }
 
-func (c Config) BucketUnversioned() string {
-	return c.S3TestBucketPrefix + ".unversioned"
-}
+func (c Config) BucketUnversioned() string { _ = "STUB: not implemented"; return "" }

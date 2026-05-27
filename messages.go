@@ -2,9 +2,6 @@ package gofakes3
 
 import (
 	"encoding/xml"
-	"fmt"
-	"sort"
-	"strings"
 	"time"
 )
 
@@ -23,14 +20,7 @@ type UserInfo struct {
 type Buckets []BucketInfo
 
 // Names is a deterministic convenience function returning a sorted list of bucket names.
-func (b Buckets) Names() []string {
-	out := make([]string, len(b))
-	for i, v := range b {
-		out[i] = v.Name
-	}
-	sort.Strings(out)
-	return out
-}
+func (b Buckets) Names() []string { _ = "STUB: not implemented"; return nil }
 
 // BucketInfo represents a single bucket returned by the ListBuckets response.
 type BucketInfo struct {
@@ -57,17 +47,11 @@ type CompleteMultipartUploadRequest struct {
 }
 
 func (c CompleteMultipartUploadRequest) partsAreSorted() bool {
-	return sort.IntsAreSorted(c.partIDs())
+	_ = "STUB: not implemented"
+	return false
 }
 
-func (c CompleteMultipartUploadRequest) partIDs() []int {
-	inParts := make([]int, 0, len(c.Parts))
-	for _, inputPart := range c.Parts {
-		inParts = append(inParts, inputPart.PartNumber)
-	}
-	sort.Ints(inParts)
-	return inParts
-}
+func (c CompleteMultipartUploadRequest) partIDs() []int { _ = "STUB: not implemented"; return nil }
 
 type CompleteMultipartUploadResult struct {
 	Location string `xml:"Location"`
@@ -89,16 +73,11 @@ type ContentTime struct {
 	time.Time
 }
 
-func NewContentTime(t time.Time) ContentTime {
-	return ContentTime{t}
-}
+func NewContentTime(t time.Time) ContentTime { _ = "STUB: not implemented"; return *new(ContentTime) }
 
 func (c ContentTime) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	_ = "STUB: not implemented"
 	// This is the format expected by the aws xml code, not the default.
-	if !c.IsZero() {
-		var s = c.UTC().Format("2006-01-02T15:04:05.999Z")
-		return e.EncodeElement(s, start)
-	}
 	return nil
 }
 
@@ -123,16 +102,7 @@ type MultiDeleteResult struct {
 	Error   []ErrorResult `xml:",omitempty"`
 }
 
-func (d MultiDeleteResult) AsError() error {
-	if len(d.Error) == 0 {
-		return nil
-	}
-	var strs = make([]string, 0, len(d.Error))
-	for _, er := range d.Error {
-		strs = append(strs, er.String())
-	}
-	return fmt.Errorf("gofakes3: multi delete failed:\n%s", strings.Join(strs, "\n"))
-}
+func (d MultiDeleteResult) AsError() error { _ = "STUB: not implemented"; return nil }
 
 type ErrorResult struct {
 	XMLName   xml.Name  `xml:"Error"`
@@ -144,30 +114,11 @@ type ErrorResult struct {
 }
 
 func ErrorResultFromError(err error) ErrorResult {
-	switch err := err.(type) {
-	case *resourceErrorResponse:
-		return ErrorResult{
-			Resource:  err.Resource,
-			RequestID: err.RequestID,
-			Message:   err.Message,
-			Code:      err.Code,
-		}
-	case *ErrorResponse:
-		return ErrorResult{
-			RequestID: err.RequestID,
-			Message:   err.Message,
-			Code:      err.Code,
-		}
-	case Error:
-		return ErrorResult{Code: err.ErrorCode()}
-	default:
-		return ErrorResult{Code: ErrInternal}
-	}
+	_ = "STUB: not implemented"
+	return *new(ErrorResult)
 }
 
-func (er ErrorResult) String() string {
-	return fmt.Sprintf("%s: [%s] %s", er.Key, er.Code, er.Message)
-}
+func (er ErrorResult) String() string { _ = "STUB: not implemented"; return "" }
 
 type InitiateMultipartUploadResult struct {
 	Bucket   string   `xml:"Bucket"`
@@ -261,8 +212,8 @@ type DeleteMarker struct {
 
 var _ VersionItem = &DeleteMarker{}
 
-func (d DeleteMarker) GetVersionID() VersionID   { return d.VersionID }
-func (d *DeleteMarker) setVersionID(i VersionID) { d.VersionID = i }
+func (d DeleteMarker) GetVersionID() VersionID   { _ = "STUB: not implemented"; return *new(VersionID) }
+func (d *DeleteMarker) setVersionID(i VersionID) { _ = "STUB: not implemented"; return }
 
 type Version struct {
 	XMLName      xml.Name    `xml:"Version"`
@@ -281,8 +232,8 @@ type Version struct {
 
 var _ VersionItem = &Version{}
 
-func (v Version) GetVersionID() VersionID   { return v.VersionID }
-func (v *Version) setVersionID(i VersionID) { v.VersionID = i }
+func (v Version) GetVersionID() VersionID   { _ = "STUB: not implemented"; return *new(VersionID) }
+func (v *Version) setVersionID(i VersionID) { _ = "STUB: not implemented"; return }
 
 type VersionItem interface {
 	GetVersionID() VersionID
@@ -338,32 +289,11 @@ func NewListBucketVersionsResult(
 	prefix *Prefix,
 	page *ListBucketVersionsPage,
 ) *ListBucketVersionsResult {
-
-	result := &ListBucketVersionsResult{
-		Xmlns: "http://s3.amazonaws.com/doc/2006-03-01/",
-		Name:  bucketName,
-	}
-	if prefix != nil {
-		result.Prefix = prefix.Prefix
-		result.Delimiter = prefix.Delimiter
-	}
-	if page != nil {
-		result.MaxKeys = page.MaxKeys
-		result.KeyMarker = page.KeyMarker
-		result.VersionIDMarker = page.VersionIDMarker
-	}
-	return result
+	_ = "STUB: not implemented"
+	return nil
 }
 
-func (b *ListBucketVersionsResult) AddPrefix(prefix string) {
-	if b.prefixes == nil {
-		b.prefixes = map[string]bool{}
-	} else if b.prefixes[prefix] {
-		return
-	}
-	b.prefixes[prefix] = true
-	b.CommonPrefixes = append(b.CommonPrefixes, CommonPrefix{Prefix: prefix})
-}
+func (b *ListBucketVersionsResult) AddPrefix(prefix string) { _ = "STUB: not implemented"; return }
 
 type ListMultipartUploadsResult struct {
 	Bucket string `xml:"Bucket"`
@@ -440,24 +370,14 @@ type CopyObjectResult struct {
 // MFADeleteStatus is used by VersioningConfiguration.
 type MFADeleteStatus string
 
-func (v MFADeleteStatus) Enabled() bool { return v == MFADeleteEnabled }
+func (v MFADeleteStatus) Enabled() bool { _ = "STUB: not implemented"; return false }
 
 func (v *MFADeleteStatus) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	var s string
-	if err := d.DecodeElement(&s, &start); err != nil {
-		// FIXME: this doesn't seem to detect or report errors if the element is the wrong type.
-		return err
-	}
-	s = strings.ToLower(strings.TrimSpace(s))
-	if s == "enabled" {
-		*v = MFADeleteEnabled
-	} else if s == "disabled" {
-		*v = MFADeleteDisabled
-	} else {
-		return ErrorMessagef(ErrIllegalVersioningConfiguration, "unexpected value %q for MFADeleteStatus, expected 'Enabled' or 'Disabled'", s)
-	}
+	_ = "STUB: not implemented"
 	return nil
 }
+
+// FIXME: this doesn't seem to detect or report errors if the element is the wrong type.
 
 const (
 	MFADeleteNone     MFADeleteStatus = ""
@@ -475,10 +395,8 @@ type ObjectID struct {
 type StorageClass string
 
 func (s StorageClass) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	if s == "" {
-		s = StorageStandard
-	}
-	return e.EncodeElement(string(s), start)
+	_ = "STUB: not implemented"
+	return nil
 }
 
 const (
@@ -502,36 +420,18 @@ type VersioningConfiguration struct {
 	MFADelete MFADeleteStatus `xml:"MfaDelete"`
 }
 
-func (v *VersioningConfiguration) Enabled() bool {
-	return v.Status == VersioningEnabled
-}
+func (v *VersioningConfiguration) Enabled() bool { _ = "STUB: not implemented"; return false }
 
-func (v *VersioningConfiguration) SetEnabled(enabled bool) {
-	if enabled {
-		v.Status = VersioningEnabled
-	} else {
-		v.Status = VersioningSuspended
-	}
-}
+func (v *VersioningConfiguration) SetEnabled(enabled bool) { _ = "STUB: not implemented"; return }
 
 type VersioningStatus string
 
 func (v *VersioningStatus) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	var s string
-	if err := d.DecodeElement(&s, &start); err != nil {
-		// FIXME: this doesn't seem to detect or report errors if the element is the wrong type.
-		return err
-	}
-	s = strings.ToLower(strings.TrimSpace(s))
-	if s == "enabled" {
-		*v = VersioningEnabled
-	} else if s == "suspended" {
-		*v = VersioningSuspended
-	} else {
-		return ErrorMessagef(ErrIllegalVersioningConfiguration, "unexpected value %q for Status, expected 'Enabled' or 'Suspended'", s)
-	}
+	_ = "STUB: not implemented"
 	return nil
 }
+
+// FIXME: this doesn't seem to detect or report errors if the element is the wrong type.
 
 const (
 	VersioningNone      VersioningStatus = ""

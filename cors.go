@@ -40,46 +40,16 @@ type withCORS struct {
 }
 
 func wrapCORS(handler http.Handler) http.Handler {
-	return &withCORS{
-		handler: handler,
-		methods: "POST, GET, OPTIONS, PUT, DELETE, HEAD",
-		origin:  "*",
-		headers: corsHeadersString,
-		expose:  "ETag",
-	}
+	_ = "STUB: not implemented"
+	return *new(http.Handler)
 }
 
 func wrapInsecureCORS(handler http.Handler) http.Handler {
-	return &withCORS{
-		handler: handler,
-		methods: "*",
-		origin:  "*",
-		headers: "*",
-		expose:  "*",
-	}
+	_ = "STUB: not implemented"
+	return *new(http.Handler)
 }
 
 func (s *withCORS) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	isPreflight := r.Method == "OPTIONS" &&
-		r.Header.Get("Access-Control-Request-Method") != "" &&
-		r.Header.Get("Origin") != ""
-
-	if s.origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", s.origin)
-	}
-
-	if isPreflight {
-		if s.methods != "" {
-			w.Header().Set("Access-Control-Allow-Methods", s.methods)
-		}
-		if s.headers != "" {
-			w.Header().Set("Access-Control-Allow-Headers", s.headers)
-		}
-		if s.expose != "" {
-			w.Header().Set("Access-Control-Expose-Headers", s.expose)
-		}
-		return
-	}
-
-	s.handler.ServeHTTP(w, r)
+	_ = "STUB: not implemented"
+	return
 }

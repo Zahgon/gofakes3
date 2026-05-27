@@ -1,18 +1,12 @@
 package gofakes3
 
 import (
-	"bytes"
-	"crypto/md5"
-	"encoding/hex"
-	"fmt"
 	"io"
 	"math/big"
 	"net/url"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/johannesboyne/gofakes3/internal/goskipiter"
 	"github.com/ryszard/goskiplist/skiplist"
 )
 
@@ -78,58 +72,15 @@ type bucketUploads struct {
 	objectIndex *skiplist.SkipList // effectively map[ObjectKey][]*multipartUpload
 }
 
-func newBucketUploads() *bucketUploads {
-	return &bucketUploads{
-		uploads:     map[UploadID]*multipartUpload{},
-		objectIndex: skiplist.NewStringMap(),
-	}
-}
+func newBucketUploads() *bucketUploads { _ = "STUB: not implemented"; return nil }
 
 // add assumes uploader.mu is acquired
-func (bu *bucketUploads) add(mpu *multipartUpload) {
-	bu.uploads[mpu.ID] = mpu
-
-	uploads, ok := bu.objectIndex.Get(mpu.Object)
-	if !ok {
-		uploads = []*multipartUpload{mpu}
-	} else {
-		uploads = append(uploads.([]*multipartUpload), mpu)
-	}
-	bu.objectIndex.Set(mpu.Object, uploads)
-}
+func (bu *bucketUploads) add(mpu *multipartUpload) { _ = "STUB: not implemented"; return }
 
 // remove assumes uploader.mu is acquired
-func (bu *bucketUploads) remove(uploadID UploadID) {
-	upload := bu.uploads[uploadID]
-	delete(bu.uploads, uploadID)
+func (bu *bucketUploads) remove(uploadID UploadID) { _ = "STUB: not implemented"; return }
 
-	var uploads []*multipartUpload
-	{
-		upv, ok := bu.objectIndex.Get(upload.Object)
-		if !ok || upv == nil {
-			return
-		}
-		uploads = upv.([]*multipartUpload)
-	}
-
-	var found = -1
-	var v *multipartUpload
-	for found, v = range uploads {
-		if v.ID == uploadID {
-			break
-		}
-	}
-
-	if found >= 0 {
-		uploads = append(uploads[:found], uploads[found+1:]...) // delete the found index
-	}
-
-	if len(uploads) == 0 {
-		bu.objectIndex.Delete(upload.Object)
-	} else {
-		bu.objectIndex.Set(upload.Object, uploads)
-	}
-}
+// delete the found index
 
 // uploader manages multipart uploads.
 //
@@ -162,335 +113,82 @@ type uploader struct {
 	mu      sync.Mutex
 }
 
-func newUploader(b Backend, timeSource TimeSource) *uploader {
-	return &uploader{
-		buckets:    make(map[string]*bucketUploads),
-		storage:    b,
-		timeSource: timeSource,
-		uploadID:   new(big.Int),
-	}
-}
+func newUploader(b Backend, timeSource TimeSource) *uploader { _ = "STUB: not implemented"; return nil }
 
 func (u *uploader) CreateMultipartUpload(bucket, object string, meta map[string]string) (UploadID, error) {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-
-	u.uploadID.Add(u.uploadID, add1)
-
-	mpu := &multipartUpload{
-		ID:        UploadID(u.uploadID.String()),
-		Bucket:    bucket,
-		Object:    object,
-		Meta:      meta,
-		Initiated: u.timeSource.Now(),
-	}
-
-	// FIXME: make sure the uploader responds to DeleteBucket
-	bucketUploads := u.buckets[bucket]
-	if bucketUploads == nil {
-		u.buckets[bucket] = newBucketUploads()
-		bucketUploads = u.buckets[bucket]
-	}
-
-	bucketUploads.add(mpu)
-
-	return mpu.ID, nil
+	_ = "STUB: not implemented"
+	return *new(UploadID), nil
 }
+
+// FIXME: make sure the uploader responds to DeleteBucket
 
 func (u *uploader) ListParts(bucket, object string, uploadID UploadID, marker int, limit int64) (*ListMultipartUploadPartsResult, error) {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-
-	mpu, err := u.getUnlocked(bucket, object, uploadID)
-	if err != nil {
-		return nil, err
-	}
-
-	var result = ListMultipartUploadPartsResult{
-		Bucket:           bucket,
-		Key:              object,
-		UploadID:         uploadID,
-		MaxParts:         limit,
-		PartNumberMarker: marker,
-		StorageClass:     "STANDARD", // FIXME
-	}
-
-	var cnt int64
-	for partNumber, part := range mpu.parts[marker:] {
-		if part == nil {
-			continue
-		}
-
-		if cnt >= limit {
-			result.IsTruncated = true
-			result.NextPartNumberMarker = partNumber
-			break
-		}
-
-		result.Parts = append(result.Parts, ListMultipartUploadPartItem{
-			ETag:         part.ETag,
-			Size:         int64(len(part.Body)),
-			PartNumber:   partNumber,
-			LastModified: part.LastModified,
-		})
-
-		cnt++
-	}
-
-	return &result, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
+
+// FIXME
 
 func (u *uploader) ListMultipartUploads(bucket string, marker *UploadListMarker, prefix Prefix, limit int64) (*ListMultipartUploadsResult, error) {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-
-	bucketUploads, ok := u.buckets[bucket]
-	if !ok {
-		return nil, ErrNoSuchUpload
-	}
-
-	var result = ListMultipartUploadsResult{
-		Bucket:     bucket,
-		Delimiter:  prefix.Delimiter,
-		Prefix:     prefix.Prefix,
-		MaxUploads: limit,
-	}
-
-	// we only need to use the uploadID to start the page if one was actually
-	// supplied, otherwise assume we can start from the start of the iterator:
-	var firstFound = true
-
-	var iter = goskipiter.New(bucketUploads.objectIndex.Iterator())
-	if marker != nil {
-		iter.Seek(marker.Object)
-		firstFound = marker.UploadID == ""
-		result.UploadIDMarker = marker.UploadID
-		result.KeyMarker = marker.Object
-	}
-
-	// Indicates whether the returned list of multipart uploads is truncated.
-	// The list can be truncated if the number of multipart uploads exceeds
-	// the limit allowed or specified by MaxUploads.
-	//
-	// In our case, this could be because there are still objects left in the
-	// iterator, or because there are still uploadIDs left in the slice inside
-	// the iteration.
-	var truncated bool
-
-	var cnt int64
-	var seenPrefixes = map[string]bool{}
-	var match PrefixMatch
-
-	for iter.Next() {
-		object := iter.Key().(string)
-		uploads := iter.Value().([]*multipartUpload)
-
-	retry:
-		matched := prefix.Match(object, &match)
-		if !matched {
-			continue
-		}
-
-		if !firstFound {
-			for idx, mpu := range uploads {
-				if mpu.ID == marker.UploadID {
-					firstFound = true
-					uploads = uploads[idx:]
-					goto retry
-				}
-			}
-
-		} else {
-			if match.CommonPrefix {
-				if !seenPrefixes[match.MatchedPart] {
-					result.CommonPrefixes = append(result.CommonPrefixes, match.AsCommonPrefix())
-					seenPrefixes[match.MatchedPart] = true
-				}
-
-			} else {
-				for idx, upload := range uploads {
-					result.Uploads = append(result.Uploads, ListMultipartUploadItem{
-						StorageClass: "STANDARD", // FIXME
-						Key:          object,
-						UploadID:     upload.ID,
-						Initiated:    ContentTime{Time: upload.Initiated},
-					})
-
-					cnt++
-					if cnt >= limit {
-						if idx != len(uploads)-1 { // if this is not the last iteration, we have truncated
-							truncated = true
-							result.NextUploadIDMarker = uploads[idx+1].ID
-							result.NextKeyMarker = object
-						}
-						goto done
-					}
-				}
-			}
-		}
-	}
-
-done:
-	// If we did not truncate while in the middle of an object's upload ID list,
-	// we need to see if there are more objects in the outer iteration:
-	if !truncated {
-		for iter.Next() {
-			object := iter.Key().(string)
-			if matched := prefix.Match(object, &match); matched && !match.CommonPrefix {
-				truncated = true
-
-				// This is not especially defensive; it assumes the rest of the code works
-				// as it should. Could be something to clean up later:
-				result.NextUploadIDMarker = iter.Value().([]*multipartUpload)[0].ID
-				result.NextKeyMarker = object
-				break
-			}
-		}
-	}
-
-	result.IsTruncated = truncated
-
-	return &result, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
+// we only need to use the uploadID to start the page if one was actually
+// supplied, otherwise assume we can start from the start of the iterator:
+
+// Indicates whether the returned list of multipart uploads is truncated.
+// The list can be truncated if the number of multipart uploads exceeds
+// the limit allowed or specified by MaxUploads.
+//
+// In our case, this could be because there are still objects left in the
+// iterator, or because there are still uploadIDs left in the slice inside
+// the iteration.
+
+// FIXME
+
+// if this is not the last iteration, we have truncated
+
+// If we did not truncate while in the middle of an object's upload ID list,
+// we need to see if there are more objects in the outer iteration:
+
+// This is not especially defensive; it assumes the rest of the code works
+// as it should. Could be something to clean up later:
+
 func (u *uploader) AbortMultipartUpload(bucket, object string, id UploadID) error {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-	_, err := u.getUnlocked(bucket, object, id)
-	if err != nil {
-		return err
-	}
-
-	// if getUnlocked succeeded, so will this:
-	u.buckets[bucket].remove(id)
-
+	_ = "STUB: not implemented"
 	return nil
 }
 
+// if getUnlocked succeeded, so will this:
+
 func (u *uploader) UploadPart(bucket, object string, id UploadID, partNumber int, contentLength int64, input io.Reader) (etag string, err error) {
-	if partNumber > MaxUploadPartNumber {
-		return "", ErrInvalidPart
-	}
-	body, err := io.ReadAll(input)
-	if err != nil {
-		return "", err
-	}
-	if len(body) != int(contentLength) {
-		return "", ErrIncompleteBody
-	}
-	u.mu.Lock()
-	defer u.mu.Unlock()
-	mpu, err := u.getUnlocked(bucket, object, id)
-	if err != nil {
-		return "", err
-	}
-
-	mpu.mu.Lock()
-	defer mpu.mu.Unlock()
-
-	// What the ETag actually is is not specified, so let's just invent any old thing
-	// from guaranteed unique input:
-	hash := md5.New()
-	hash.Write([]byte(body))
-	etag = fmt.Sprintf(`"%s"`, hex.EncodeToString(hash.Sum(nil)))
-
-	part := multipartUploadPart{
-		PartNumber:   partNumber,
-		Body:         body,
-		ETag:         etag,
-		LastModified: NewContentTime(u.timeSource.Now()),
-	}
-	if partNumber >= len(mpu.parts) {
-		mpu.parts = append(mpu.parts, make([]*multipartUploadPart, partNumber-len(mpu.parts)+1)...)
-	}
-	mpu.parts[partNumber] = &part
-	return etag, nil
+	_ = "STUB: not implemented"
+	return "", nil
 }
+
+// What the ETag actually is is not specified, so let's just invent any old thing
+// from guaranteed unique input:
 
 func (u *uploader) CompleteMultipartUpload(bucket, object string, id UploadID, input *CompleteMultipartUploadRequest) (version VersionID, etag string, err error) {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-
-	mpu, err := u.getUnlocked(bucket, object, id)
-	if err != nil {
-		return "", "", err
-	}
-
-	mpu.mu.Lock()
-	defer mpu.mu.Unlock()
-
-	mpuPartsLen := len(mpu.parts)
-
-	// FIXME: what does AWS do when mpu.Parts > input.Parts? Presumably you may
-	// end up uploading more parts than you need to assemble, so it should
-	// probably just ignore that?
-	if len(input.Parts) > mpuPartsLen {
-		return "", "", ErrInvalidPart
-	}
-
-	if !input.partsAreSorted() {
-		return "", "", ErrInvalidPartOrder
-	}
-
-	var size int64
-
-	for _, inPart := range input.Parts {
-		if inPart.PartNumber >= mpuPartsLen || mpu.parts[inPart.PartNumber] == nil {
-			return "", "", ErrorMessagef(ErrInvalidPart, "unexpected part number %d in complete request", inPart.PartNumber)
-		}
-
-		upPart := mpu.parts[inPart.PartNumber]
-		if strings.Trim(inPart.ETag, "\"") != strings.Trim(upPart.ETag, "\"") {
-			return "", "", ErrorMessagef(ErrInvalidPart, "unexpected part etag for number %d in complete request", inPart.PartNumber)
-		}
-
-		size += int64(len(upPart.Body))
-	}
-
-	body := make([]byte, 0, size)
-	hash := md5.New()
-	for _, inPart := range input.Parts {
-		upPart := mpu.parts[inPart.PartNumber]
-		body = append(body, upPart.Body...)
-		hashBytes, err := hex.DecodeString(strings.Trim(upPart.ETag, "\""))
-		if err != nil {
-			return "", "", ErrorMessagef(ErrInternal, "invalid etag for number %d is stored: %s", inPart.PartNumber, err)
-		}
-		hash.Write(hashBytes)
-	}
-
-	etag = fmt.Sprintf(`"%s-%d"`, hex.EncodeToString(hash.Sum(nil)), len(input.Parts))
-
-	result, err := u.storage.PutObject(bucket, object, mpu.Meta, bytes.NewReader(body), int64(len(body)), nil)
-	if err != nil {
-		return "", "", err
-	}
-
-	// if getUnlocked succeeded, so will this:
-	u.buckets[bucket].remove(id)
-	return result.VersionID, etag, nil
+	_ = "STUB: not implemented"
+	return *new(VersionID), "", nil
 }
+
+// FIXME: what does AWS do when mpu.Parts > input.Parts? Presumably you may
+// end up uploading more parts than you need to assemble, so it should
+// probably just ignore that?
+
+// if getUnlocked succeeded, so will this:
 
 func (u *uploader) getUnlocked(bucket, object string, id UploadID) (mu *multipartUpload, err error) {
-	bucketUps, ok := u.buckets[bucket]
-	if !ok {
-		return nil, ErrNoSuchUpload
-	}
-
-	mu, ok = bucketUps.uploads[id]
-	if !ok {
-		return nil, ErrNoSuchUpload
-	}
-
-	if mu.Bucket != bucket || mu.Object != object {
-		// FIXME: investigate what AWS does here; essentially if you initiate a
-		// multipart upload at '/ObjectName1?uploads', then complete the upload
-		// at '/ObjectName2?uploads', what happens?
-		return nil, ErrNoSuchUpload
-	}
-
-	return mu, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
+
+// FIXME: investigate what AWS does here; essentially if you initiate a
+// multipart upload at '/ObjectName1?uploads', then complete the upload
+// at '/ObjectName2?uploads', what happens?
 
 // UploadListMarker is used to seek to the start of a page in a ListMultipartUploads operation.
 type UploadListMarker struct {
@@ -516,11 +214,8 @@ type UploadListMarker struct {
 // uploadListMarkerFromQuery collects the upload-id-marker and key-marker query parameters
 // to the ListMultipartUploads operation.
 func uploadListMarkerFromQuery(q url.Values) *UploadListMarker {
-	object := q.Get("key-marker")
-	if object == "" {
-		return nil
-	}
-	return &UploadListMarker{Object: object, UploadID: UploadID(q.Get("upload-id-marker"))}
+	_ = "STUB: not implemented"
+	return nil
 }
 
 type multipartUploadPart struct {
